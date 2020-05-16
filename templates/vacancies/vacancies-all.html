@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Вакансия | Джуманджи{% endblock %}
+
+{% block container %}
+    <section>
+      <h1 class="h1 text-center mx-auto mt-4 pt-5" style="font-size: 70px;"><strong>Все вакансии</strong></h1>
+      <p class="text-center pt-1">{{ vacancies.count }} вакансий</p>
+      <div class="row mt-5">
+        <div class="col-12 col-lg-8 offset-lg-2 m-auto">
+            {% for vacancy in vacancies %}
+              {% include 'vacancies/include/vacancy_card_mini.html' %}
+            {% endfor %}
+        </div>
+      </div>
+    </section>
+{% endblock %}
