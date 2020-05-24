@@ -1,8 +1,14 @@
+from django.contrib import auth
+from django.contrib.auth.models import User
+from django.contrib.auth.views import LogoutView
 from django.http import Http404
-from django.shortcuts import render
+from django.shortcuts import render, HttpResponseRedirect
 from django.views import View
+from django.views.generic import CreateView
+from django.urls import reverse
 
 from vacancies.models import Specialty, Company, Vacancy
+from vacancies.forms import ApplicationForm, MyCompanyForm
 
 
 class MainView(View):
@@ -47,12 +53,221 @@ class CompaniesView(View):
         return render(request, 'vacancies/company.html', context)
 
 
+class AllCompaniesView(View):
+    def get(self, request, *args, **kwargs):
+        companies = Company.objects.all()
+        context = {
+            'companies': companies
+        }
+        return render(request, 'vacancies/companies-all.html', context)
+
+
 class VacancyView(View):
     def get(self, request, vacancy_id, *args, **kwargs):
         vacancy = Vacancy.objects.filter(id=vacancy_id).first()
         if vacancy is None:
             raise Http404
         context = {
-            'vacancy': vacancy
+            'vacancy': vacancy,
         }
         return render(request, 'vacancies/vacancy.html', context)
+
+
+class ApplicationSendView(View):
+    def post(self, request, vacancy_id, *args, **kwargs):
+        vacancy = Vacancy.objects.filter(id=vacancy_id).first()
+        if vacancy is None:
+            raise Http404
+
+        application_form = ApplicationForm(request.POST)
+        if not application_form.is_valid():
+            context = {
+                'vacancy': vacancy,
+                'error': 'Данные заполнены некорректно'
+            }
+            return render(request, 'vacancies/vacancy.html', context)
+
+        current_user = request.user
+        if current_user.is_authenticated:
+            application = application_form.save(commit=False)
+            application.vacancy = vacancy
+            application.user = current_user
+            application.save()
+        return render(request, 'vacancies/sent.html', context={
+            'vacancy_id': vacancy_id
+        })
+
+
+class MyCompanyView(View):
+    def get(self, request, *args, **kwargs):
+        current_user = request.user
+        login_required(current_user)
+
+        user_company = Company.objects.filter(owner=current_user).first()
+        if user_company is None:
+            return render(request, 'vacancies/company-create.html')
+
+        context = {
+            'company': user_company,
+            'form_action': 'update_company'
+        }
+        return render(request, 'vacancies/company-edit.html', context=context)
+
+    def post(self, request, *args, **kwargs):
+        current_user = request.user
+        login_required(current_user)
+
+        user_company = Company.objects.filter(owner=current_user).first()
+        company_form = MyCompanyForm(request.POST)
+        form_action = request.POST['form_action']
+
+        if not company_form.is_valid():
+            message = {
+                'type': 'alert-danger',
+                'text': 'Вы ввели некорректные данные'
+            }
+            context = {
+                'form_action': form_action,
+                'message': message,
+                'company': user_company
+            }
+            return render(request, 'vacancies/company-edit.html', context=context)
+
+        if form_action == 'add_company':
+            company = company_form.save(commit=False)
+            company.owner = current_user
+            company.save()
+            message = {
+                'type': 'alert-success',
+                'text': 'Компания успешно добавлена!'
+            }
+            user_company = Company.objects.filter(owner=current_user).first()
+            context = {
+                'message': message,
+                'company': user_company,
+                'form_action': 'update_company'
+            }
+            return render(request, 'vacancies/company-edit.html', context=context)
+
+        update_company(user_company, request.POST)
+        message = {
+            'type': 'alert-info',
+            'text': 'Информация о компании изменена'
+        }
+        context = {
+            'message': message,
+            'company': user_company,
+            'form_action': 'update_company'
+        }
+        return render(request, 'vacancies/company-edit.html', context=context)
+
+
+class AddMyCompanyView(View):
+    def get(self, request, *args, **kwargs):
+        current_user = request.user
+        login_required(current_user)
+        user_company = Company.objects.filter(owner=current_user).first()
+        if user_company is None:
+            return render(request, 'vacancies/company-edit.html', {
+                'form_action': 'add_company'
+            })
+        return HttpResponseRedirect(reverse('my-company'))
+        # return HttpResponseRedirect('/mycompany/')
+
+
+class MyVacanciesView(View):
+    def get(self, request, *args, **kwargs):
+        company = Company.objects.filter(owner=request.user).first()
+        vacancies = Vacancy.objects.filter(company=company)
+        context = {
+            'vacancies': vacancies
+        }
+        return render(request, 'vacancies/vacancy-list.html', context)
+
+
+class MyVacancyView(View):
+    def get(self, request, vacancy_id, *args, **kwargs):
+        context = {}
+        return render(request, 'vacancies/vacancy-edit.html', context)
+
+
+class AddMyVacancyView(View):
+    def get(self, request, vacancy_id, *args, **kwargs):
+        context = {}
+        return render(request, 'vacancies/vacancy-edit.html', context)
+
+
+class CustomLoginView(View):
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return HttpResponseRedirect('/')
+        return render(request, 'vacancies/login.html', context={})
+
+    def post(self, request, *args, **kwargs):
+        username = request.POST['username']
+        password = request.POST['password']
+        user = auth.authenticate(username=username, password=password)
+        if user is not None and user.is_active:
+            auth.login(request, user)
+            return HttpResponseRedirect("/")
+        else:
+            return render(request, 'vacancies/login.html', context={
+                'username': username,
+            })
+
+
+class CustomLogoutView(LogoutView):
+    pass
+
+
+class RegisterView(CreateView):
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return HttpResponseRedirect('/')
+        return render(request, 'vacancies/register.html', context={})
+
+    def post(self, request, *args, **kwargs):
+        errors = {}
+        username = request.POST['username']
+        password = request.POST['password']
+        first_name = request.POST['first_name']
+        last_name = request.POST['last_name']
+        is_username_exists = bool(
+            User.objects.filter(username=username).first()
+        )
+
+        if not is_username_exists:
+            User.objects.create_user(
+                username=username,
+                password=password,
+                first_name=first_name,
+                last_name=last_name
+            )
+            return render(request, 'vacancies/login.html', context={
+                'message': 'Регистрация прошла успешно'
+            })
+
+        errors['username'] = 'Пользователь с таким логином уже существует'
+        context = {
+            'errors': errors
+        }
+        return render(request, 'vacancies/register.html', context=context)
+
+
+class AboutView(View):
+    def get(self, request, *args, **kwargs):
+        return render(request, 'vacancies/about.html')
+
+
+def login_required(user):
+    if not user.is_authenticated:
+        return HttpResponseRedirect('login/')
+
+
+def update_company(company, new_data):
+    company.name = new_data['name']
+    company.location = new_data['location']
+    company.logo = new_data['logo']
+    company.description = new_data['description']
+    company.employee_count = new_data['employee_count']
+    company.save()

@@ -1,0 +1,4 @@
+[flake8]
+max-line-length = 100
+ignore = D203
+exclude = .git,__pycache__,.idea,media,static,env,templates,migrations,db.sqlite3

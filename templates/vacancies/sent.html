@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Отклик отправлен | Джуманджи{% endblock %}
+{% block container %}
+    <div class="row mt-5">
+      <div class="col-10 col-md-6 offset-1 offset-md-3 mt-5">
+        <div class="card mb-3">
+          <div class="card-body text-center pt-5">
+              {% if user.is_authenticated %}
+                <img src="{% static 'icon_ok.png' %}" width="65" alt="">
+                <h2 class="h5 card-title mt-4 mb-2">Отклик отправлен</h2>
+              {% else %}
+                <img src="{% static 'icon_warning.png' %}" width="65" alt="">
+                  <h2 class="h5 card-title mt-4 mb-2">Чтобы откликнуться на вакансию, необходимо <a href="{% url 'register' %}">зарегистрироваться</a></h2>
+              {% endif %}
+            <p><a href="{% url 'vacancy' vacancy_id %}">Вернуться к вакансии</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+{% endblock %}
