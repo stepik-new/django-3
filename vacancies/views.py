@@ -256,7 +256,7 @@ class RegisterView(CreateView):
 
 class AboutView(View):
     def get(self, request, *args, **kwargs):
-        return render(request, 'vacancies/about.html')
+        return render(request, 'vacancies/about.html', {})
 
 
 def login_required(user):

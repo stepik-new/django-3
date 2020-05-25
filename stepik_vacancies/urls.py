@@ -16,7 +16,7 @@ urlpatterns = [
     path('login/', CustomLoginView.as_view(), name='login'),
     path('logout/', CustomLogoutView.as_view(), name='logout'),
     path('register/', RegisterView.as_view(), name='register'),
-    path('about', AboutView.as_view(), name='about'),
+    path('about/', AboutView.as_view(), name='about'),
 
     path('vacancies/', VacanciesView.as_view(), name='all-vacancies'),
     path('vacancies/cat/<str:category>/', VacanciesCatView.as_view(), name='cat-vacancies'),
