@@ -2,13 +2,13 @@ from django.contrib import auth
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LogoutView
 from django.http import Http404
-from django.shortcuts import render, HttpResponseRedirect
+from django.shortcuts import render, HttpResponseRedirect, get_object_or_404
 from django.views import View
 from django.views.generic import CreateView
 from django.urls import reverse
 
 from vacancies.models import Specialty, Company, Vacancy
-from vacancies.forms import ApplicationForm, MyCompanyForm
+from vacancies.forms import ApplicationForm, MyCompanyForm, MyVacancyForm
 
 
 class MainView(View):
@@ -44,11 +44,13 @@ class VacanciesCatView(View):
 
 class CompaniesView(View):
     def get(self, request, company_id, *args, **kwargs):
+        url_from = request.META.get('HTTP_REFERER', '')
         company = Company.objects.filter(id=company_id).first()
         if company is None:
             raise Http404
         context = {
-            'company': company
+            'company': company,
+            'url_from': url_from
         }
         return render(request, 'vacancies/company.html', context)
 
@@ -65,10 +67,13 @@ class AllCompaniesView(View):
 class VacancyView(View):
     def get(self, request, vacancy_id, *args, **kwargs):
         vacancy = Vacancy.objects.filter(id=vacancy_id).first()
+        url_from = request.META.get('HTTP_REFERER', '')
+
         if vacancy is None:
             raise Http404
         context = {
             'vacancy': vacancy,
+            'url_from': url_from
         }
         return render(request, 'vacancies/vacancy.html', context)
 
@@ -101,7 +106,8 @@ class ApplicationSendView(View):
 class MyCompanyView(View):
     def get(self, request, *args, **kwargs):
         current_user = request.user
-        login_required(current_user)
+        if not current_user.is_authenticated:
+            return HttpResponseRedirect('/login')
 
         user_company = Company.objects.filter(owner=current_user).first()
         if user_company is None:
@@ -115,10 +121,11 @@ class MyCompanyView(View):
 
     def post(self, request, *args, **kwargs):
         current_user = request.user
-        login_required(current_user)
+        if not current_user.is_authenticated:
+            return HttpResponseRedirect('/login')
 
         user_company = Company.objects.filter(owner=current_user).first()
-        company_form = MyCompanyForm(request.POST)
+        company_form = MyCompanyForm(request.POST, request.FILES)
         form_action = request.POST['form_action']
 
         if not company_form.is_valid():
@@ -135,6 +142,8 @@ class MyCompanyView(View):
 
         if form_action == 'add_company':
             company = company_form.save(commit=False)
+            if 'logo' in request.FILES:
+                company.logo = request.FILES['logo']
             company.owner = current_user
             company.save()
             message = {
@@ -149,10 +158,10 @@ class MyCompanyView(View):
             }
             return render(request, 'vacancies/company-edit.html', context=context)
 
-        update_company(user_company, request.POST)
+        update_company(user_company, request.POST, request.FILES)
         message = {
             'type': 'alert-info',
-            'text': 'Информация о компании изменена'
+            'text': 'Информация о компании изменена!'
         }
         context = {
             'message': message,
@@ -165,7 +174,9 @@ class MyCompanyView(View):
 class AddMyCompanyView(View):
     def get(self, request, *args, **kwargs):
         current_user = request.user
-        login_required(current_user)
+        if not current_user.is_authenticated:
+            return HttpResponseRedirect('/login')
+
         user_company = Company.objects.filter(owner=current_user).first()
         if user_company is None:
             return render(request, 'vacancies/company-edit.html', {
@@ -177,6 +188,9 @@ class AddMyCompanyView(View):
 
 class MyVacanciesView(View):
     def get(self, request, *args, **kwargs):
+        current_user = request.user
+        if not current_user.is_authenticated:
+            return HttpResponseRedirect('/login')
         company = Company.objects.filter(owner=request.user).first()
         vacancies = Vacancy.objects.filter(company=company)
         context = {
@@ -187,14 +201,65 @@ class MyVacanciesView(View):
 
 class MyVacancyView(View):
     def get(self, request, vacancy_id, *args, **kwargs):
-        context = {}
+        current_user = request.user
+        if not current_user.is_authenticated:
+            return HttpResponseRedirect('/login')
+
+        vacancy = get_object_or_404(Vacancy, id=vacancy_id)
+        specialties = Specialty.objects.all()
+        context = {
+            'vacancy': vacancy,
+            'specialties': specialties
+        }
         return render(request, 'vacancies/vacancy-edit.html', context)
 
 
 class AddMyVacancyView(View):
-    def get(self, request, vacancy_id, *args, **kwargs):
-        context = {}
+    def get(self, request, *args, **kwargs):
+        current_user = request.user
+        if not current_user.is_authenticated:
+            return HttpResponseRedirect('/login')
+
+        specialties = Specialty.objects.all()
+        context = {
+            'form_action': 'add_vacancy',
+            'specialties': specialties
+        }
         return render(request, 'vacancies/vacancy-edit.html', context)
+
+    def post(self, request, *args, **kwargs):
+        current_user = request.user
+        if not current_user.is_authenticated:
+            return HttpResponseRedirect('/login')
+
+        vacancy_form = MyVacancyForm(request.POST)
+        company = get_object_or_404(Company, owner=current_user)
+        specialty = get_object_or_404(Specialty, id=request.POST['specialty_id'])
+
+        if not vacancy_form.is_valid():
+            message = {
+                'type': 'alert-danger',
+                'text': 'Вы ввели некорректные данные'
+            }
+            context = {
+                'form_action': 'add_vacancy',
+                'message': message,
+            }
+            return render(request, 'vacancies/vacancy-edit.html', context)
+
+        vacancy = vacancy_form.save(commit=False)
+        vacancy.company = company
+        vacancy.specialty = specialty
+        vacancy.save()
+        message = {
+            'type': 'alert-success',
+            'text': 'Вакансия успешно добавлена!'
+        }
+        context = {
+            'message': message,
+            'vacancy': vacancy,
+        }
+        return render(request, 'vacancies/vacancy-edit.html', context=context)
 
 
 class CustomLoginView(View):
@@ -259,15 +324,11 @@ class AboutView(View):
         return render(request, 'vacancies/about.html', {})
 
 
-def login_required(user):
-    if not user.is_authenticated:
-        return HttpResponseRedirect('login/')
-
-
-def update_company(company, new_data):
+def update_company(company, new_data, file_data):
     company.name = new_data['name']
     company.location = new_data['location']
-    company.logo = new_data['logo']
+    if 'logo' in file_data:
+        company.logo = file_data['logo']
     company.description = new_data['description']
     company.employee_count = new_data['employee_count']
     company.save()

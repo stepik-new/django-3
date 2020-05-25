@@ -31,14 +31,14 @@
                       <div class="row align-items-center">
 
                         <div class="col-6 col-lg-8">
-                          <a href="{% url 'edit-vacancy' vacancy.id %}" class="mb-1">{{ vacancy.title }}</a>
+                          <a href="{% url 'vacancy' vacancy.id %}" class="mb-1">{{ vacancy.title }}</a>
                           <p class="mb-1">
                             <span class="mr-4">От {{ vacancy.salary_min|floatformat:"0" }} до {{ vacancy.salary_max|floatformat:"0" }} руб.</span>
                             <a href="#" class="text-info">{{ vacancy.applications.count }} отклика</a>
                           </p>
                         </div>
                         <div class="col-6 col-lg-4 text-right">
-                          <a href="#" class="btn btn-outline-info">Изменить</a>
+                          <a href="{% url 'edit-vacancy' vacancy.id %}" class="btn btn-outline-info">Изменить</a>
                         </div>
 
                       </div>
@@ -51,7 +51,7 @@
                     У Вас пока нет вакансий, но Вы можете создать первую!
                 </p>
             {% endif %}
-                <a class="btn btn-info" href="{% url 'add-vacancy' %}">Добавить вакансию</a>
+                <a class="btn btn-info mt-3" href="{% url 'add-vacancy' %}">Добавить вакансию</a>
             </section>
           </div>
         </div>

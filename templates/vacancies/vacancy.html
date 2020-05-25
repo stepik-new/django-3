@@ -3,7 +3,7 @@
     <div class="row mt-5">
       <div class="col-12 col-lg-2">
         <div class="pl-3 mb-5">
-          <p><a href="#">Назад</a></p>
+          <p><a href="{{ url_from }}">Назад</a></p>
         </div>
       </div>
       <div class="col-12 col-lg-8">
@@ -16,7 +16,7 @@
               {% endif %}
           </a>
           <div class="d-flex align-items-baseline align-content-baseline">
-            <h1 class="h2 mt-4 font-weight-bold" >{{ vacancy.title }}</h1>
+            <h1 class="h2 mt-4 font-weight-bold" >{{ vacancy.title }} {{ url_from }}</h1>
             <p class="m-0 pl-3">{{ vacancy.salary_min|floatformat:"0" }} – {{ vacancy.salary_max|floatformat:"0" }} Р</p>
           </div>
           <p class="mt-2">Скилл1 • Скилл2 • Скилл3 • Скилл4 • Скилл5</p>
@@ -38,15 +38,15 @@
                 {% endif %}
               <div class="form-group">
                 <label class="mb-1 mt-2" for="userName">Вас зовут</label>
-                <input class="form-control" type="text" placeholder="" id="userName" name="written_username">
+                <input class="form-control" type="text" placeholder="" id="userName" name="written_username" maxlength="128" required>
               </div>
               <div class="form-group">
                 <label class="mb-1" for="userPhone">Ваш телефон</label>
-                <input class="form-control" type="tel" placeholder="" id="userPhone" name="written_phone">
+                <input class="form-control" type="tel" placeholder="" id="userPhone" name="written_phone" maxlength="32" required>
               </div>
               <div class="form-group">
                 <label class="mb-1" for="userMsg" >Сопроводительное письмо</label>
-                <textarea class="form-control" rows="8" id="userMsg"></textarea>
+                <textarea class="form-control" rows="8" id="userMsg" required></textarea>
               </div>
               <input type="submit" class="btn btn-primary mt-4 mb-2" value="Записаться на пробный урок" name="written_cover_letter">
             </div>

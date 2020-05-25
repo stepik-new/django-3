@@ -30,7 +30,7 @@
                     {{ message.text }}
                   </p>
                 {% endif %}
-              <form method="post" action="{% url 'my-company' %}">{% csrf_token %}
+              <form method="post" action="{% url 'my-company' %}" enctype="multipart/form-data">{% csrf_token %}
                 <input type="hidden" name="form_action" value="{{ form_action }}">
                 <div class="row">
                   <div class="col-12 col-md-6">
@@ -44,7 +44,11 @@
                       <label class="mb-2 text-dark" for="companyLogo">Логотип</label>
                       <div class="row align-items-center">
                         <div class="col-6">
-                          <img src="https://place-hold.it/120x40" alt="" style="max-width: 120px;height: auto;">
+                            {% if company.logo %}
+                                <img src="{{ company.logo.url }}" alt="" style="max-width: 120px;height: auto;">
+                            {% else %}
+                                <img src="https://place-hold.it/120x40" alt="" style="max-width: 120px;height: auto;">
+                            {% endif %}
                         </div>
                         <div class="col-6" style="position: relative;">
                           <div class="input-group-prepend" style="position: absolute; top: 0;right: 15px;">
