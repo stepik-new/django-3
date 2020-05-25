@@ -1,0 +1,1 @@
+gunicorn stepik_vacancies.wsgi
