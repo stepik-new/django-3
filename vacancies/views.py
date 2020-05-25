@@ -158,7 +158,13 @@ class MyCompanyView(View):
             }
             return render(request, 'vacancies/company-edit.html', context=context)
 
-        update_company(user_company, request.POST, request.FILES)
+        user_company.name = request.POST['name']
+        user_company.location = request.POST['location']
+        if 'logo' in request.FILES:
+            user_company.logo = request.FILES['logo']
+        user_company.description = request.POST['description']
+        user_company.employee_count = request.POST['employee_count']
+        user_company.save()
         message = {
             'type': 'alert-info',
             'text': 'Информация о компании изменена!'
@@ -212,6 +218,42 @@ class MyVacancyView(View):
             'specialties': specialties
         }
         return render(request, 'vacancies/vacancy-edit.html', context)
+
+    def post(self, request, *args, **kwargs):
+        current_user = request.user
+        if not current_user.is_authenticated:
+            return HttpResponseRedirect('/login')
+
+        vacancy = get_object_or_404(Vacancy, id=request.POST['vacancy_id'])
+        vacancy_form = MyVacancyForm(request.POST)
+        specialty = get_object_or_404(Specialty, id=request.POST['specialty_id'])
+
+        if not vacancy_form.is_valid():
+            message = {
+                'type': 'alert-danger',
+                'text': 'Вы ввели некорректные данные'
+            }
+            context = {
+                'message': message,
+            }
+            return render(request, 'vacancies/vacancy-edit.html', context)
+
+        vacancy.title = request.POST['title']
+        vacancy.skills = request.POST['skills']
+        vacancy.description = request.POST['description']
+        vacancy.salary_min = request.POST['salary_min']
+        vacancy.salary_max = request.POST['salary_max']
+        vacancy.specialty = specialty
+        vacancy.save()
+        message = {
+            'type': 'alert-info',
+            'text': 'Информация о вакансии изменена!'
+        }
+        context = {
+            'message': message,
+            'vacancy': vacancy,
+        }
+        return render(request, 'vacancies/vacancy-edit.html', context=context)
 
 
 class AddMyVacancyView(View):
@@ -322,13 +364,3 @@ class RegisterView(CreateView):
 class AboutView(View):
     def get(self, request, *args, **kwargs):
         return render(request, 'vacancies/about.html', {})
-
-
-def update_company(company, new_data, file_data):
-    company.name = new_data['name']
-    company.location = new_data['location']
-    if 'logo' in file_data:
-        company.logo = file_data['logo']
-    company.description = new_data['description']
-    company.employee_count = new_data['employee_count']
-    company.save()
