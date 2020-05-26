@@ -7,7 +7,8 @@ from vacancies.views import MainView, CustomLoginView, CustomLogoutView, Registe
 from vacancies.views import (
     VacanciesView, VacanciesCatView, VacancyView, CompaniesView,
     ApplicationSendView, MyCompanyView, MyVacanciesView, MyVacancyView,
-    AddMyCompanyView, AllCompaniesView, AboutView, AddMyVacancyView
+    AddMyCompanyView, AllCompaniesView, AboutView, AddMyVacancyView,
+    SearchView, ResumeView, AddResumeView
 )
 
 urlpatterns = [
@@ -17,6 +18,7 @@ urlpatterns = [
     path('logout/', CustomLogoutView.as_view(), name='logout'),
     path('register/', RegisterView.as_view(), name='register'),
     path('about/', AboutView.as_view(), name='about'),
+    path('search/', SearchView.as_view(), name='search'),
 
     path('vacancies/', VacanciesView.as_view(), name='all-vacancies'),
     path('vacancies/cat/<str:category>/', VacanciesCatView.as_view(), name='cat-vacancies'),
@@ -31,6 +33,9 @@ urlpatterns = [
     path('mycompany/vacancies/', MyVacanciesView.as_view(), name='my-vacancies'),
     path('mycompany/vacancies/<int:vacancy_id>/', MyVacancyView.as_view(), name='edit-vacancy'),
     path('mycompany/vacancies/add/', AddMyVacancyView.as_view(), name='add-vacancy'),
+
+    path('resume/', ResumeView.as_view(), name='resume'),
+    path('resume/add/', AddResumeView.as_view(), name='add-resume'),
 ]
 
 if settings.DEBUG:

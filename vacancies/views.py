@@ -1,14 +1,15 @@
 from django.contrib import auth
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LogoutView
+from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import render, HttpResponseRedirect, get_object_or_404
 from django.views import View
 from django.views.generic import CreateView
 from django.urls import reverse
 
-from vacancies.models import Specialty, Company, Vacancy
-from vacancies.forms import ApplicationForm, MyCompanyForm, MyVacancyForm
+from vacancies.models import Specialty, Company, Vacancy, Resume
+from vacancies.forms import ApplicationForm, MyCompanyForm, MyVacancyForm, ResumeForm
 
 
 class MainView(View):
@@ -364,3 +365,146 @@ class RegisterView(CreateView):
 class AboutView(View):
     def get(self, request, *args, **kwargs):
         return render(request, 'vacancies/about.html', {})
+
+
+class SearchView(View):
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get('s')
+        if not query:
+            HttpResponseRedirect('/')
+
+        vacancies = Vacancy.objects.filter(
+            Q(title__icontains=query) | Q(description__icontains=query)
+        )
+        context = {
+            'vacancies': vacancies,
+            'query': query
+        }
+        return render(request, 'vacancies/search.html', context=context)
+
+
+class ResumeView(View):
+    def get(self, request, *args, **kwargs):
+        current_user = request.user
+        if not current_user.is_authenticated:
+            return HttpResponseRedirect('/login')
+
+        resume = Resume.objects.filter(user=current_user).first()
+        if not resume:
+            return render(request, 'vacancies/resume-create.html')
+
+        statuses, grades = Resume.STATUSES, Resume.GRADES
+        specialties = Specialty.objects.all()
+        context = {
+            'resume': resume,
+            'statuses': statuses,
+            'grades': grades,
+            'specialties': specialties
+        }
+        return render(request, 'vacancies/resume-edit.html', context)
+
+    def post(self, request, *args, **kwargs):
+        current_user = request.user
+        if not current_user.is_authenticated:
+            return HttpResponseRedirect('/login')
+
+        resume = Resume.objects.filter(user=current_user).first()
+        if resume.user != current_user:
+            raise Http404
+
+        statuses, grades = Resume.STATUSES, Resume.GRADES
+        specialties = Specialty.objects.all()
+        context = {
+            'statuses': statuses,
+            'grades': grades,
+            'specialties': specialties,
+        }
+        resume_form = ResumeForm(request.POST)
+        if not resume_form.is_valid():
+            message = {
+                'type': 'alert-danger',
+                'text': 'Вы ввели некорректные данные'
+            }
+        else:
+            message = {
+                'type': 'alert-info',
+                'text': 'Данные резюме обновлены'
+            }
+
+        specialty_id = request.POST['specialty_id']
+        specialty = get_object_or_404(Specialty, id=specialty_id)
+        resume.specialty = specialty
+        resume.user = current_user
+        resume.first_name = request.POST['first_name']
+        resume.last_name = request.POST['last_name']
+        resume.status = request.POST['status']
+        resume.grade = request.POST['grade']
+        resume.portfolio = request.POST['portfolio']
+        resume.salary = request.POST['salary']
+        resume.education = request.POST['education']
+        resume.experience = request.POST['experience']
+        resume.save()
+
+        context['message'] = message
+        context['resume'] = resume
+        return render(request, 'vacancies/resume-edit.html', context)
+
+
+class AddResumeView(View):
+    def get(self, request, *args, **kwargs):
+        current_user = request.user
+        if not current_user.is_authenticated:
+            return HttpResponseRedirect('/login')
+
+        resume = Resume.objects.filter(user=current_user).first()
+        statuses, grades = Resume.STATUSES, Resume.GRADES
+        specialties = Specialty.objects.all()
+        context = {
+            'statuses': statuses,
+            'grades': grades,
+            'specialties': specialties
+        }
+        if resume:
+            context['resume'] = resume
+        else:
+            context['form_action'] = 'add_resume'
+        return render(request, 'vacancies/resume-edit.html', context=context)
+
+    def post(self, request, *args, **kwargs):
+        current_user = request.user
+        if not current_user.is_authenticated:
+            return HttpResponseRedirect('/login')
+
+        if Resume.objects.filter(user=current_user).first():
+            return HttpResponseRedirect('/resume')
+
+        resume_form = ResumeForm(request.POST)
+        statuses, grades = Resume.STATUSES, Resume.GRADES
+        specialties = Specialty.objects.all()
+        context = {
+            'statuses': statuses,
+            'grades': grades,
+            'specialties': specialties,
+        }
+        if not resume_form.is_valid():
+            message = {
+                'type': 'alert-danger',
+                'text': 'Вы ввели некорректные данные'
+            }
+            context['form_action'] = 'add_resume'
+
+        specialty_id = request.POST['specialty_id']
+        specialty = get_object_or_404(Specialty, id=specialty_id)
+        resume = resume_form.save(commit=False)
+        resume.specialty = specialty
+        resume.user = current_user
+        resume.save()
+
+        message = {
+            'type': 'alert-success',
+            'text': 'Резюме успешно добавлено!'
+        }
+        context['message'] = message
+        context['resume'] = resume
+        return render(request, 'vacancies/resume-edit.html', context)
+

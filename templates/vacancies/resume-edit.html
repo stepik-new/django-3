@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}Мое резюме | Джуманджи{% endblock %}
+{% block style %}
+<style>
+    body {
+      background-color: #F6F2E6;
+    }
+</style>
+{% endblock %}
+
+{% block container %}
+    <section class="col-12 col-lg-6 offset-lg-3 mt-5 card">
+      <div class="card-body px-3 pb-4">
+        <h1 class="h4 pt-2 pb-3">Мое резюме</h1>
+        {% if message %}
+              <p class="alert {{ message.type }}" role="alert">{{ message.text }}</p>
+        {% endif %}
+        {% if form_action == 'add_resume' %}
+            <form method="post" action="{% url 'add-resume' %}">
+        {% else %}
+            <form method="post" action="{% url 'resume' %}">
+        {% endif %}
+        {% csrf_token %}
+          <div class="row">
+            <div class="col-12 col-md-6">
+              <div class="form-group pb-2">
+                <label class="mb-2 text-dark" for="userName">Имя</label>
+                <input class="form-control" type="text" name='first_name' value="{{ resume.first_name }}" id="userName" required>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="form-group pb-2">
+                <label class="mb-2 text-dark" for="userSurname">Фамилия</label>
+                <input class="form-control" type="text" name='last_name' value="{{ resume.last_name }}" id="userSurname" required>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12 col-md-6">
+              <div class="form-group pb-2">
+                <label class="mb-2 text-dark" for="userReady">Готовность к работе</label>
+                <select class="custom-select mr-sm-2" id="userReady" name='status' required>
+                      {% if form_action != 'add_resume' %}
+                         <option value="{{ resume.status }}" selected>{{ resume.status }}</option>
+                      {% endif %}
+                      {% for status in statuses %}
+                          {% if status != resume.status %}
+                            <option value="{{ status }}">{{ status }}</option>
+                          {% endif %}
+                      {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="form-group pb-2">
+                <label class="mb-2 text-dark" for="userPortfolio">Ожидаемое вознаграждение</label>
+                <input class="form-control" type="number" name='salary' min="0" step="1000" value="{{ resume.salary }}" id="userPortfolio" required>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12 col-md-6">
+              <div class="form-group pb-2">
+                <label class="mb-2 text-dark" for="userSpecialization">Специализация</label>
+                <select class="custom-select mr-sm-2" name='specialty_id' id="userSpecialization" required>
+                      {% if form_action != 'add_resume' %}
+                         <option value="{{ resume.specialty.id }}" selected>{{ resume.specialty.title }}</option>
+                      {% endif %}
+                      {% for specialty in specialties %}
+                          {% if specialty != salary.specialty %}
+                            <option value="{{ specialty.id }}">{{ specialty.title }}</option>
+                          {% endif %}
+                      {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="form-group pb-2">
+                <label class="mb-2 text-dark" for="userQualification">Квалификация</label>
+                <select class="custom-select mr-sm-2" name='grade' id="userQualification" required>
+                      {% if form_action != 'add_resume' %}
+                         <option value="{{ resume.grade }}" selected>{{ resume.grade }}</option>
+                      {% endif %}
+                      {% for grade in grades %}
+                          {% if grade != resume.grade %}
+                            <option value="{{ grade }}">{{ grade }}</option>
+                          {% endif %}
+                      {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="form-group pb-2">
+            <label class="mb-2 text-dark" for="userEducation">Образование</label>
+            <textarea class="form-control" name='education' rows="4" id="userEducation" style="color:#000;" required>{{ resume.education }}</textarea>
+          </div>
+          <div class="form-group pb-2">
+            <label class="mb-2 text-dark" for="userExperience">Опыт работы</label>
+            <textarea class="form-control" rows="4" name='experience' id="userExperience" style="color:#000;" required>{{ resume.experience }}</textarea>
+          </div>
+          <div class="form-group pb-3">
+            <label class="mb-2 text-dark" for="userPortfolio">Ссылка на портфолио</label>
+            <input class="form-control" type="text" name='portfolio' value="{{ resume.portfolio }}" placeholder="http://anylink.github.io" id="userPortfolio" required>
+          </div>
+          <div class="form-group">
+            <input type="submit" class="btn btn-info" value="Сохранить" required>
+          </div>
+        </form>
+      </div>
+    </section>
+{% endblock %}

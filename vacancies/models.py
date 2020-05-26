@@ -54,3 +54,27 @@ class Application(models.Model):
                              related_name='applications',
                              on_delete=models.CASCADE,
                              default=None)
+
+
+class Resume(models.Model):
+    STATUSES = ['Не ищу работу', 'Рассматриваю предложения', 'Ищу работу']
+    GRADES = ['Стажер', 'Джуниор', 'Миддл', 'Синьор', 'Лид']
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='resume',
+    )
+    first_name = models.CharField(max_length=128)
+    last_name = models.CharField(max_length=128)
+    status = models.CharField(max_length=128)
+    grade = models.CharField(max_length=128)
+    portfolio = models.CharField(max_length=128)
+    salary = models.IntegerField(default=0)
+    specialty = models.ForeignKey(
+        'vacancies.Specialty',
+        on_delete=models.CASCADE,
+        related_name='resumes'
+    )
+    education = models.TextField(max_length=10000)
+    experience = models.TextField(max_length=10000)

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block container %}
+    <section>
+
+        <h1 class="h1 text-center mt-5 mb-4">Поиск вакансий</h1>
+
+        <div class="row">
+            <div class="col-md-7 col-lg-5 col-xl-6 col-sm-8 mx-auto">
+
+            {% include "vacancies/include/search_form.html" %}
+
+            </div>
+        </div>
+
+        {% if vacancies|length == 0 %}
+          <p class="text-center pt-1 text-danger">Ничего не найдено по запросу "{{ query }}"</p>
+        {% else %}
+          <p class="text-center pt-1 text-muted">Найдено {{ vacancies|length }} вакансий по запросу "{{ query }}"</p>
+          <div class="row mt-5">
+            <div class="col-12 col-lg-8 offset-lg-2 m-auto">
+                {% for vacancy in vacancies.all %}
+                    {% include 'vacancies/include/vacancy_card_mini.html' %}
+                {% endfor %}
+            </div>
+      </div>
+        {% endif %}
+    </section>
+{% endblock %}
