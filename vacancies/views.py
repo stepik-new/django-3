@@ -1,7 +1,7 @@
 from django.contrib import auth
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LogoutView
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import Http404
 from django.shortcuts import render, HttpResponseRedirect, get_object_or_404
 from django.views import View
@@ -14,8 +14,8 @@ from vacancies.forms import ApplicationForm, MyCompanyForm, MyVacancyForm, Resum
 
 class MainView(View):
     def get(self, request, *args, **kwargs):
-        specialties = Specialty.objects.all()
-        companies = Company.objects.all()
+        specialties = Specialty.objects.all().annotate(vacancies_count=Count('vacancies'))
+        companies = Company.objects.all().annotate(vacancies_count=Count('vacancies'))
         context = {
             'specialties': specialties,
             'companies': companies,
@@ -199,7 +199,8 @@ class MyVacanciesView(View):
         if not current_user.is_authenticated:
             return HttpResponseRedirect('/login')
         company = Company.objects.filter(owner=request.user).first()
-        vacancies = Vacancy.objects.filter(company=company)
+        vacancies = Vacancy.objects.filter(company=company).\
+            annotate(application_count=Count('applications'))
         context = {
             'vacancies': vacancies
         }

@@ -34,10 +34,10 @@
                           <a href="{% url 'vacancy' vacancy.id %}" class="mb-1">{{ vacancy.title }}</a>
                           <p class="mb-1">
                             <span class="mr-4">От {{ vacancy.salary_min|floatformat:"0" }} до {{ vacancy.salary_max|floatformat:"0" }} руб.</span>
-                            {% if vacancy.applications.count == 0 %}
+                            {% if vacancy.application_count == 0 %}
                               <span class="text-muted">Нет откликов</span>
                             {% else %}
-                                <a href="{% url 'edit-vacancy' vacancy.id %}#applications" class="text-info">{{ vacancy.applications.count }} отклика</a>
+                                <a href="{% url 'edit-vacancy' vacancy.id %}#applications" class="text-info">{{ vacancy.application_count }} отклика</a>
                             {% endif %}
                           </p>
                         </div>
